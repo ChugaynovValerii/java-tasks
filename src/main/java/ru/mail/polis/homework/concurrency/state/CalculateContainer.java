@@ -35,10 +35,8 @@ public class CalculateContainer<T> {
     
     private final AtomicReference<Object[]> resWithState;
     private static final String ERROR_MSG = "ERROR: Container already closed";
-    private final int id;
     
-    public CalculateContainer(int id, T result) {
-        this.id = id;
+    public CalculateContainer(T result) {
         this.resWithState = new AtomicReference<>(new Object[]{State.START, result});
     }
     
@@ -52,7 +50,7 @@ public class CalculateContainer<T> {
             oldResult = resWithState.get();
             newResult = new Object[]{State.INIT, initOperator.apply((T) resWithState.get()[1])};
             if (resWithState.get()[0].equals(State.CLOSE)) {
-                System.out.println(ERROR_MSG + " " + id);
+                System.out.println(ERROR_MSG);
                 return;
             }
         } while (!oldResult[0].equals(State.START) && !oldResult[0].equals(State.FINISH)
@@ -69,7 +67,7 @@ public class CalculateContainer<T> {
             oldResult = resWithState.get();
             newResult = new Object[]{State.RUN, runOperator.apply((T) resWithState.get()[1], value)};
             if (resWithState.get()[0].equals(State.CLOSE)) {
-                System.out.println(ERROR_MSG + " " + id);
+                System.out.println(ERROR_MSG);
                 return;
             }
         } while (!oldResult[0].equals(State.INIT)
@@ -87,12 +85,11 @@ public class CalculateContainer<T> {
             oldResult = resWithState.get();
             newResult = new Object[]{State.FINISH, oldResult[1]};
             if (resWithState.get()[0].equals(State.CLOSE)) {
-                System.out.println(ERROR_MSG + " " + id);
+                System.out.println(ERROR_MSG);
                 return;
             }
         } while (!oldResult[0].equals(State.RUN)
                 || !resWithState.compareAndSet(oldResult, newResult));
-        System.out.print(id + " ");
         finishConsumer.accept((T) oldResult[1]);
     }
     
@@ -108,12 +105,11 @@ public class CalculateContainer<T> {
             oldResult = resWithState.get();
             newResult = new Object[]{State.CLOSE, oldResult[1]};
             if (resWithState.get()[0].equals(State.CLOSE)) {
-                System.out.println(ERROR_MSG + " " + id);
+                System.out.println(ERROR_MSG);
                 return;
             }
         } while (!oldResult[0].equals(State.FINISH)
                 || !resWithState.compareAndSet(oldResult, newResult));
-        System.out.print(id + " ");
         closeConsumer.accept((T) oldResult[1]);
     }
     
